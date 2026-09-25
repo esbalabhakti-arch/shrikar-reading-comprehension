@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Shrikar Reading Comprehension</title>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f5f7f6;
+      color: #1f2933;
+    }
+
+    header {
+      background: #176b5b;
+      color: white;
+      padding: 22px;
+      text-align: center;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 30px;
+    }
+
+    header p {
+      margin: 7px 0 0;
+      opacity: 0.9;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 30px auto;
+      padding: 20px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 14px;
+      padding: 25px;
+      margin-bottom: 20px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+    }
+
+    .upload-area {
+      border: 2px dashed #176b5b;
+      border-radius: 12px;
+      padding: 40px;
+      text-align: center;
+    }
+
+    input[type="file"] {
+      margin: 20px 0;
+    }
+
+    button {
+      background: #176b5b;
+      color: white;
+      border: none;
+      padding: 13px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #115347;
+    }
+
+    button:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .progress-shell {
+      width: 100%;
+      height: 24px;
+      background: #e5e7eb;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-top: 15px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: #176b5b;
+      transition: width 0.2s;
+    }
+
+    .page-review {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 30px;
+      padding-bottom: 30px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .page-review canvas {
+      width: 100%;
+      height: auto;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 400px;
+      box-sizing: border-box;
+      padding: 14px;
+      font-size: 16px;
+      line-height: 1.5;
+      border: 1px solid #bbb;
+      border-radius: 8px;
+      resize: vertical;
+    }
+
+    .status {
+      font-weight: bold;
+      margin-top: 15px;
+    }
+
+    .warning {
+      background: #fff8dc;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 10px;
+    }
+
+    .success {
+      background: #e8f7ef;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 15px;
+    }
+
+    .error {
+      background: #fdecec;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 15px;
+    }
+
+    @media (max-width: 750px) {
+      .page-review {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <h1>📚 Shrikar Reading Comprehension</h1>
+  <p>Story Book Scanner — Version 1</p>
+</header>
+
+<div class="container">
+
+  <div class="card" id="uploadCard">
+
+    <h2>Upload Story Book</h2>
+
+    <p>
+      Select a PDF made from photographs or scans of your story book.
+      The book will be processed page by page.
+    </p>
+
+    <div class="upload-area">
+
+      <h3>📄 Choose Story PDF</h3>
+
+      <input
+        type="file"
+        id="pdfFile"
+        accept="application/pdf"
+      >
+
+      <br>
+
+      <button id="processButton">
+        Read This Book
+      </button>
+
+    </div>
+
+    <div id="errorBox" class="error hidden"></div>
+
+  </div>
+
+
+  <div class="card hidden" id="processingCard">
+
+    <h2>🔍 Reading Your Book...</h2>
+
+    <p id="fileInfo"></p>
+
+    <p class="status" id="statusText">
+      Preparing PDF...
+    </p>
+
+    <div class="progress-shell">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <p id="progressText">0%</p>
+
+    <div class="warning">
+      Scanned books can take several minutes because every page
+      must be examined individually.
+    </div>
+
+  </div>
+
+
+  <div class="card hidden" id="reviewCard">
+
+    <h2>✅ Story Extracted</h2>
+
+    <p>
+      Review the page images and extracted text below.
+      Correct any OCR mistakes before we build Shrikar's reading activity.
+    </p>
+
+    <div class="success">
+      <strong>Extraction complete.</strong>
+      Your corrections can be typed directly into the text boxes.
+    </div>
+
+    <br>
+
+    <button id="saveButton">
+      Save Corrections
+    </button>
+
+    <br><br>
+
+    <div id="pagesContainer"></div>
+
+  </div>
+
+</div>
+
+
+<script>
+
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+
+const pdfFile =
+  document.getElementById("pdfFile");
+
+const processButton =
+  document.getElementById("processButton");
+
+const uploadCard =
+  document.getElementById("uploadCard");
+
+const processingCard =
+  document.getElementById("processingCard");
+
+const reviewCard =
+  document.getElementById("reviewCard");
+
+const statusText =
+  document.getElementById("statusText");
+
+const progressBar =
+  document.getElementById("progressBar");
+
+const progressText =
+  document.getElementById("progressText");
+
+const pagesContainer =
+  document.getElementById("pagesContainer");
+
+const fileInfo =
+  document.getElementById("fileInfo");
+
+const errorBox =
+  document.getElementById("errorBox");
+
+const saveButton =
+  document.getElementById("saveButton");
+
+
+let extractedPages = [];
+
+
+function showError(message) {
+
+  errorBox.textContent = message;
+
+  errorBox.classList.remove("hidden");
+
+}
+
+
+function updateProgress(current, total, message) {
+
+  const percent =
+    Math.round((current / total) * 100);
+
+  progressBar.style.width =
+    percent + "%";
+
+  progressText.textContent =
+    percent + "%";
+
+  statusText.textContent =
+    message;
+
+}
+
+
+processButton.addEventListener(
+  "click",
+  async () => {
+
+    errorBox.classList.add("hidden");
+
+    const file =
+      pdfFile.files[0];
+
+    if (!file) {
+
+      showError(
+        "Please choose a PDF first."
+      );
+
+      return;
+
+    }
+
+    try {
+
+      processButton.disabled = true;
+
+      processingCard.classList.remove("hidden");
+
+      reviewCard.classList.add("hidden");
+
+      pagesContainer.innerHTML = "";
+
+      extractedPages = [];
+
+      fileInfo.textContent =
+        "Book: " + file.name;
+
+      statusText.textContent =
+        "Opening PDF...";
+
+      const arrayBuffer =
+        await file.arrayBuffer();
+
+      const pdf =
+        await pdfjsLib.getDocument({
+          data: arrayBuffer
+        }).promise;
+
+      const totalPages =
+        pdf.numPages;
+
+      fileInfo.textContent =
+        file.name +
+        " — " +
+        totalPages +
+        " pages";
+
+      for (
+        let pageNumber = 1;
+        pageNumber <= totalPages;
+        pageNumber++
+      ) {
+
+        updateProgress(
+          pageNumber - 1,
+          totalPages,
+          "Preparing page " +
+          pageNumber +
+          " of " +
+          totalPages +
+          "..."
+        );
+
+
+        const page =
+          await pdf.getPage(pageNumber);
+
+
+        /*
+        ----------------------------------
+        FIRST TRY EMBEDDED PDF TEXT
+        ----------------------------------
+        */
+
+        let extractedText = "";
+
+        try {
+
+          const textContent =
+            await page.getTextContent();
+
+          extractedText =
+            textContent.items
+              .map(item => item.str)
+              .join(" ")
+              .trim();
+
+        }
+        catch (e) {
+
+          extractedText = "";
+
+        }
+
+
+        /*
+        ----------------------------------
+        RENDER HIGH-RESOLUTION PAGE
+        ----------------------------------
+        */
+
+        const scale = 2.2;
+
+        const viewport =
+          page.getViewport({
+            scale: scale
+          });
+
+        const canvas =
+          document.createElement("canvas");
+
+        const context =
+          canvas.getContext(
+            "2d",
+            {
+              willReadFrequently: true
+            }
+          );
+
+        canvas.width =
+          viewport.width;
+
+        canvas.height =
+          viewport.height;
+
+        await page.render({
+          canvasContext: context,
+          viewport: viewport
+        }).promise;
+
+
+        /*
+        ----------------------------------
+        OCR FALLBACK
+        ----------------------------------
+
+        If embedded text is very short,
+        assume this is a scanned page.
+        */
+
+        if (extractedText.length < 40) {
+
+          statusText.textContent =
+            "Scanning page " +
+            pageNumber +
+            " of " +
+            totalPages +
+            "...";
+
+          const result =
+            await Tesseract.recognize(
+              canvas,
+              "eng",
+              {
+                logger: message => {
+
+                  if (
+                    message.status ===
+                    "recognizing text"
+                  ) {
+
+                    const ocrPercent =
+                      Math.round(
+                        message.progress * 100
+                      );
+
+                    statusText.textContent =
+                      "Scanning page " +
+                      pageNumber +
+                      " of " +
+                      totalPages +
+                      " — " +
+                      ocrPercent +
+                      "%";
+                  }
+
+                }
+              }
+            );
+
+          extractedText =
+            result.data.text.trim();
+
+        }
+
+
+        /*
+        ----------------------------------
+        STORE RESULT
+        ----------------------------------
+        */
+
+        extractedPages.push({
+          pageNumber: pageNumber,
+          text: extractedText
+        });
+
+
+        /*
+        ----------------------------------
+        CREATE REVIEW SCREEN
+        ----------------------------------
+        */
+
+        const review =
+          document.createElement("div");
+
+        review.className =
+          "page-review";
+
+
+        const imageSide =
+          document.createElement("div");
+
+        const pageTitle =
+          document.createElement("h3");
+
+        pageTitle.textContent =
+          "PDF Page " + pageNumber;
+
+        imageSide.appendChild(
+          pageTitle
+        );
+
+        /*
+        Use a smaller copy for display
+        so the review page does not consume
+        enormous amounts of browser memory.
+        */
+
+        const displayCanvas =
+          document.createElement("canvas");
+
+        const displayViewport =
+          page.getViewport({
+            scale: 1.1
+          });
+
+        displayCanvas.width =
+          displayViewport.width;
+
+        displayCanvas.height =
+          displayViewport.height;
+
+        await page.render({
+          canvasContext:
+            displayCanvas.getContext("2d"),
+
+          viewport:
+            displayViewport
+        }).promise;
+
+        imageSide.appendChild(
+          displayCanvas
+        );
+
+
+        const textSide =
+          document.createElement("div");
+
+        const textTitle =
+          document.createElement("h3");
+
+        textTitle.textContent =
+          "Extracted Text";
+
+        textSide.appendChild(
+          textTitle
+        );
+
+
+        const textarea =
+          document.createElement(
+            "textarea"
+          );
+
+        textarea.value =
+          extractedText;
+
+        textarea.dataset.page =
+          pageNumber;
+
+        textSide.appendChild(
+          textarea
+        );
+
+
+        review.appendChild(
+          imageSide
+        );
+
+        review.appendChild(
+          textSide
+        );
+
+        pagesContainer.appendChild(
+          review
+        );
+
+
+        /*
+        Release large OCR canvas.
+        */
+
+        canvas.width = 1;
+        canvas.height = 1;
+
+
+        updateProgress(
+          pageNumber,
+          totalPages,
+          "Finished page " +
+          pageNumber +
+          " of " +
+          totalPages
+        );
+
+      }
+
+
+      statusText.textContent =
+        "Book processing complete!";
+
+      progressBar.style.width =
+        "100%";
+
+      progressText.textContent =
+        "100%";
+
+      reviewCard.classList.remove(
+        "hidden"
+      );
+
+      reviewCard.scrollIntoView({
+        behavior: "smooth"
+      });
+
+    }
+    catch (error) {
+
+      console.error(error);
+
+      processingCard.classList.add(
+        "hidden"
+      );
+
+      showError(
+        "The PDF could not be processed. " +
+        "Technical message: " +
+        error.message
+      );
+
+    }
+    finally {
+
+      processButton.disabled = false;
+
+    }
+
+  }
+);
+
+
+saveButton.addEventListener(
+  "click",
+  () => {
+
+    const textareas =
+      document.querySelectorAll(
+        "textarea[data-page]"
+      );
+
+    extractedPages = [];
+
+    textareas.forEach(
+      textarea => {
+
+        extractedPages.push({
+
+          pageNumber:
+            Number(
+              textarea.dataset.page
+            ),
+
+          text:
+            textarea.value.trim()
+
+        });
+
+      }
+    );
+
+
+    localStorage.setItem(
+      "shrikarCurrentBook",
+      JSON.stringify(
+        extractedPages
+      )
+    );
+
+
+    alert(
+      "Corrections saved successfully."
+    );
+
+  }
+);
+
+</script>
+
+</body>
+</html>
