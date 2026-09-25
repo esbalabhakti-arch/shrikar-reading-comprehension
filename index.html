@@ -6,7 +6,10 @@
 
   <title>Shrikar Reading Comprehension</title>
 
+  <!-- PDF.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+  <!-- Tesseract OCR -->
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
   <style>
@@ -152,6 +155,12 @@
       margin-top: 15px;
     }
 
+    .page-status {
+      font-size: 14px;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+
     @media (max-width: 750px) {
       .page-review {
         grid-template-columns: 1fr;
@@ -160,14 +169,18 @@
   </style>
 </head>
 
+
 <body>
 
 <header>
   <h1>📚 Shrikar Reading Comprehension</h1>
-  <p>Story Book Scanner — Version 1</p>
+  <p>Story Book Scanner — Version 1.1</p>
 </header>
 
+
 <div class="container">
+
+  <!-- UPLOAD -->
 
   <div class="card" id="uploadCard">
 
@@ -196,26 +209,40 @@
 
     </div>
 
-    <div id="errorBox" class="error hidden"></div>
+    <div
+      id="errorBox"
+      class="error hidden">
+    </div>
 
   </div>
 
 
-  <div class="card hidden" id="processingCard">
+  <!-- PROCESSING -->
+
+  <div
+    class="card hidden"
+    id="processingCard">
 
     <h2>🔍 Reading Your Book...</h2>
 
     <p id="fileInfo"></p>
 
-    <p class="status" id="statusText">
+    <p
+      class="status"
+      id="statusText">
       Preparing PDF...
     </p>
 
     <div class="progress-shell">
-      <div class="progress-bar" id="progressBar"></div>
+      <div
+        class="progress-bar"
+        id="progressBar">
+      </div>
     </div>
 
-    <p id="progressText">0%</p>
+    <p id="progressText">
+      0%
+    </p>
 
     <div class="warning">
       Scanned books can take several minutes because every page
@@ -225,18 +252,22 @@
   </div>
 
 
-  <div class="card hidden" id="reviewCard">
+  <!-- REVIEW -->
+
+  <div
+    class="card hidden"
+    id="reviewCard">
 
     <h2>✅ Story Extracted</h2>
 
     <p>
-      Review the page images and extracted text below.
-      Correct any OCR mistakes before we build Shrikar's reading activity.
+      Review each photographed page and the extracted text.
+      You can directly correct any remaining OCR mistakes.
     </p>
 
     <div class="success">
       <strong>Extraction complete.</strong>
-      Your corrections can be typed directly into the text boxes.
+      Obvious illustration noise has been automatically filtered.
     </div>
 
     <br>
@@ -265,9 +296,6 @@ const pdfFile =
 
 const processButton =
   document.getElementById("processButton");
-
-const uploadCard =
-  document.getElementById("uploadCard");
 
 const processingCard =
   document.getElementById("processingCard");
@@ -300,19 +328,40 @@ const saveButton =
 let extractedPages = [];
 
 
+/*
+=================================================
+ERROR DISPLAY
+=================================================
+*/
+
 function showError(message) {
 
-  errorBox.textContent = message;
+  errorBox.textContent =
+    message;
 
-  errorBox.classList.remove("hidden");
+  errorBox.classList.remove(
+    "hidden"
+  );
 
 }
 
 
-function updateProgress(current, total, message) {
+/*
+=================================================
+PROGRESS
+=================================================
+*/
+
+function updateProgress(
+  current,
+  total,
+  message
+) {
 
   const percent =
-    Math.round((current / total) * 100);
+    Math.round(
+      (current / total) * 100
+    );
 
   progressBar.style.width =
     percent + "%";
@@ -326,14 +375,279 @@ function updateProgress(current, total, message) {
 }
 
 
+/*
+=================================================
+OCR CLEANUP
+=================================================
+
+Children's-book illustrations frequently cause
+Tesseract to hallucinate random characters.
+
+Example:
+
+bis Wea | 8.
+BL IEN A 4 ps
+Sh SIE _
+Ag QL
+
+This cleanup removes obvious noise while trying
+to preserve genuine story text.
+=================================================
+*/
+
+function cleanOCRText(rawText) {
+
+  if (!rawText) {
+    return "";
+  }
+
+
+  let lines =
+    rawText
+      .split(/\r?\n/)
+      .map(line => line.trim())
+      .filter(line => line.length > 0);
+
+
+  const cleanedLines = [];
+
+
+  for (let line of lines) {
+
+    /*
+    Normalize whitespace.
+    */
+
+    line =
+      line
+        .replace(/\s+/g, " ")
+        .trim();
+
+
+    /*
+    Ignore tiny fragments.
+    */
+
+    if (line.length < 2) {
+      continue;
+    }
+
+
+    const letters =
+      (
+        line.match(/[A-Za-z]/g)
+        || []
+      ).length;
+
+
+    const characters =
+      line
+        .replace(/\s/g, "")
+        .length;
+
+
+    if (characters === 0) {
+      continue;
+    }
+
+
+    const letterRatio =
+      letters / characters;
+
+
+    /*
+    Illustration garbage often contains
+    many symbols and relatively few letters.
+    */
+
+    if (letterRatio < 0.65) {
+      continue;
+    }
+
+
+    const words =
+      line.match(
+        /[A-Za-z]+(?:['’-][A-Za-z]+)*/g
+      ) || [];
+
+
+    /*
+    Remove suspicious single-word fragments.
+    */
+
+    if (words.length === 1) {
+
+      const word =
+        words[0];
+
+      if (word.length < 3) {
+        continue;
+      }
+
+    }
+
+
+    /*
+    Reject lines containing too many
+    isolated single-character words.
+    */
+
+    const tinyWords =
+      words.filter(
+        word => word.length === 1
+      ).length;
+
+
+    if (
+      words.length >= 3 &&
+      tinyWords / words.length > 0.4
+    ) {
+      continue;
+    }
+
+
+    /*
+    Reject lines dominated by numbers.
+    */
+
+    const digits =
+      (
+        line.match(/[0-9]/g)
+        || []
+      ).length;
+
+
+    if (
+      digits > 0 &&
+      digits / characters > 0.12
+    ) {
+      continue;
+    }
+
+
+    /*
+    Reject symbol-heavy lines.
+    */
+
+    const symbols =
+      (
+        line.match(
+          /[^A-Za-z0-9\s.,!?'"’“”\-—:;]/g
+        )
+        || []
+      ).length;
+
+
+    if (
+      symbols / characters > 0.15
+    ) {
+      continue;
+    }
+
+
+    /*
+    Remove standalone page numbers.
+    */
+
+    if (/^\d{1,3}$/.test(line)) {
+      continue;
+    }
+
+
+    cleanedLines.push(line);
+
+  }
+
+
+  /*
+  ===============================================
+  REASSEMBLE WRAPPED BOOK LINES
+  ===============================================
+
+  A printed children's-book sentence might appear:
+
+  "There is a garbage snatcher
+  in the neighborhood," Oliver said.
+
+  OCR returns those as separate lines.
+
+  We reconstruct them into logical text.
+  */
+
+  let result = "";
+
+
+  for (const line of cleanedLines) {
+
+    if (!result) {
+
+      result =
+        line;
+
+      continue;
+
+    }
+
+
+    /*
+    Determine whether the existing text
+    appears to end a sentence.
+    */
+
+    const previousEndsSentence =
+      /[.!?]["'”’]?$/.test(result);
+
+
+    if (previousEndsSentence) {
+
+      result +=
+        "\n" + line;
+
+    }
+    else {
+
+      result +=
+        " " + line;
+
+    }
+
+  }
+
+
+  /*
+  Remove excessive spaces around punctuation.
+  */
+
+  result =
+    result
+      .replace(/\s+([,.!?;:])/g, "$1")
+      .replace(/[ \t]+/g, " ")
+      .trim();
+
+
+  return result;
+
+}
+
+
+/*
+=================================================
+PROCESS PDF
+=================================================
+*/
+
 processButton.addEventListener(
   "click",
   async () => {
 
-    errorBox.classList.add("hidden");
+    errorBox.classList.add(
+      "hidden"
+    );
+
 
     const file =
       pdfFile.files[0];
+
 
     if (!file) {
 
@@ -345,40 +659,69 @@ processButton.addEventListener(
 
     }
 
+
     try {
 
-      processButton.disabled = true;
+      processButton.disabled =
+        true;
 
-      processingCard.classList.remove("hidden");
 
-      reviewCard.classList.add("hidden");
+      processingCard.classList.remove(
+        "hidden"
+      );
 
-      pagesContainer.innerHTML = "";
 
-      extractedPages = [];
+      reviewCard.classList.add(
+        "hidden"
+      );
+
+
+      pagesContainer.innerHTML =
+        "";
+
+
+      extractedPages =
+        [];
+
 
       fileInfo.textContent =
         "Book: " + file.name;
 
+
       statusText.textContent =
         "Opening PDF...";
 
+
+      /*
+      Read local PDF.
+      */
+
       const arrayBuffer =
         await file.arrayBuffer();
+
 
       const pdf =
         await pdfjsLib.getDocument({
           data: arrayBuffer
         }).promise;
 
+
       const totalPages =
         pdf.numPages;
+
 
       fileInfo.textContent =
         file.name +
         " — " +
         totalPages +
         " pages";
+
+
+      /*
+      ===============================================
+      PROCESS EACH PAGE SEQUENTIALLY
+      ===============================================
+      */
 
       for (
         let pageNumber = 1;
@@ -398,21 +741,29 @@ processButton.addEventListener(
 
 
         const page =
-          await pdf.getPage(pageNumber);
+          await pdf.getPage(
+            pageNumber
+          );
 
 
         /*
-        ----------------------------------
-        FIRST TRY EMBEDDED PDF TEXT
-        ----------------------------------
+        =============================================
+        TRY EMBEDDED PDF TEXT FIRST
+        =============================================
         */
 
-        let extractedText = "";
+        let extractedText =
+          "";
+
+        let extractionMethod =
+          "Embedded PDF text";
+
 
         try {
 
           const textContent =
             await page.getTextContent();
+
 
           extractedText =
             textContent.items
@@ -423,26 +774,33 @@ processButton.addEventListener(
         }
         catch (e) {
 
-          extractedText = "";
+          extractedText =
+            "";
 
         }
 
 
         /*
-        ----------------------------------
+        =============================================
         RENDER HIGH-RESOLUTION PAGE
-        ----------------------------------
+        =============================================
         */
 
-        const scale = 2.2;
+        const scale =
+          2.4;
+
 
         const viewport =
           page.getViewport({
             scale: scale
           });
 
+
         const canvas =
-          document.createElement("canvas");
+          document.createElement(
+            "canvas"
+          );
+
 
         const context =
           canvas.getContext(
@@ -452,28 +810,46 @@ processButton.addEventListener(
             }
           );
 
+
         canvas.width =
-          viewport.width;
+          Math.floor(
+            viewport.width
+          );
+
 
         canvas.height =
-          viewport.height;
+          Math.floor(
+            viewport.height
+          );
+
 
         await page.render({
-          canvasContext: context,
-          viewport: viewport
+
+          canvasContext:
+            context,
+
+          viewport:
+            viewport
+
         }).promise;
 
 
         /*
-        ----------------------------------
+        =============================================
         OCR FALLBACK
-        ----------------------------------
+        =============================================
 
-        If embedded text is very short,
-        assume this is a scanned page.
+        If there is little/no embedded text,
+        this is probably a scanned/photo page.
         */
 
-        if (extractedText.length < 40) {
+        if (
+          extractedText.length < 40
+        ) {
+
+          extractionMethod =
+            "Scanned Page OCR";
+
 
           statusText.textContent =
             "Scanning page " +
@@ -482,11 +858,16 @@ processButton.addEventListener(
             totalPages +
             "...";
 
+
           const result =
             await Tesseract.recognize(
+
               canvas,
+
               "eng",
+
               {
+
                 logger: message => {
 
                   if (
@@ -496,8 +877,10 @@ processButton.addEventListener(
 
                     const ocrPercent =
                       Math.round(
-                        message.progress * 100
+                        message.progress *
+                        100
                       );
+
 
                     statusText.textContent =
                       "Scanning page " +
@@ -507,97 +890,190 @@ processButton.addEventListener(
                       " — " +
                       ocrPercent +
                       "%";
+
                   }
 
                 }
+
               }
+
             );
 
+
+          /*
+          IMPORTANT:
+
+          Run OCR output through our
+          children's-book cleanup filter.
+          */
+
           extractedText =
-            result.data.text.trim();
+            cleanOCRText(
+              result.data.text
+            );
+
+        }
+        else {
+
+          /*
+          Also clean embedded text slightly.
+          */
+
+          extractedText =
+            extractedText
+              .replace(/\s+/g, " ")
+              .trim();
 
         }
 
 
         /*
-        ----------------------------------
+        =============================================
         STORE RESULT
-        ----------------------------------
+        =============================================
         */
 
         extractedPages.push({
-          pageNumber: pageNumber,
-          text: extractedText
+
+          pageNumber:
+            pageNumber,
+
+          text:
+            extractedText,
+
+          extractionMethod:
+            extractionMethod
+
         });
 
 
         /*
-        ----------------------------------
+        =============================================
         CREATE REVIEW SCREEN
-        ----------------------------------
+        =============================================
         */
 
         const review =
-          document.createElement("div");
+          document.createElement(
+            "div"
+          );
+
 
         review.className =
           "page-review";
 
 
+        /*
+        LEFT SIDE — ORIGINAL PAGE
+        */
+
         const imageSide =
-          document.createElement("div");
+          document.createElement(
+            "div"
+          );
+
 
         const pageTitle =
-          document.createElement("h3");
+          document.createElement(
+            "h3"
+          );
+
 
         pageTitle.textContent =
-          "PDF Page " + pageNumber;
+          "PDF Page " +
+          pageNumber;
+
 
         imageSide.appendChild(
           pageTitle
         );
 
+
+        const methodLabel =
+          document.createElement(
+            "div"
+          );
+
+
+        methodLabel.className =
+          "page-status";
+
+
+        methodLabel.textContent =
+          "Extraction: " +
+          extractionMethod;
+
+
+        imageSide.appendChild(
+          methodLabel
+        );
+
+
         /*
-        Use a smaller copy for display
-        so the review page does not consume
-        enormous amounts of browser memory.
+        Create lower-resolution display canvas.
         */
 
         const displayCanvas =
-          document.createElement("canvas");
+          document.createElement(
+            "canvas"
+          );
+
 
         const displayViewport =
           page.getViewport({
             scale: 1.1
           });
 
+
         displayCanvas.width =
-          displayViewport.width;
+          Math.floor(
+            displayViewport.width
+          );
+
 
         displayCanvas.height =
-          displayViewport.height;
+          Math.floor(
+            displayViewport.height
+          );
+
 
         await page.render({
+
           canvasContext:
-            displayCanvas.getContext("2d"),
+            displayCanvas.getContext(
+              "2d"
+            ),
 
           viewport:
             displayViewport
+
         }).promise;
+
 
         imageSide.appendChild(
           displayCanvas
         );
 
 
+        /*
+        RIGHT SIDE — EXTRACTED TEXT
+        */
+
         const textSide =
-          document.createElement("div");
+          document.createElement(
+            "div"
+          );
+
 
         const textTitle =
-          document.createElement("h3");
+          document.createElement(
+            "h3"
+          );
+
 
         textTitle.textContent =
           "Extracted Text";
+
 
         textSide.appendChild(
           textTitle
@@ -609,11 +1085,14 @@ processButton.addEventListener(
             "textarea"
           );
 
+
         textarea.value =
           extractedText;
 
+
         textarea.dataset.page =
           pageNumber;
+
 
         textSide.appendChild(
           textarea
@@ -624,9 +1103,11 @@ processButton.addEventListener(
           imageSide
         );
 
+
         review.appendChild(
           textSide
         );
+
 
         pagesContainer.appendChild(
           review
@@ -634,67 +1115,103 @@ processButton.addEventListener(
 
 
         /*
-        Release large OCR canvas.
+        Release the large OCR canvas
+        to reduce memory usage.
         */
 
-        canvas.width = 1;
-        canvas.height = 1;
+        canvas.width =
+          1;
+
+
+        canvas.height =
+          1;
 
 
         updateProgress(
+
           pageNumber,
+
           totalPages,
+
           "Finished page " +
           pageNumber +
           " of " +
           totalPages
+
         );
 
       }
 
 
+      /*
+      ===============================================
+      COMPLETE
+      ===============================================
+      */
+
       statusText.textContent =
         "Book processing complete!";
+
 
       progressBar.style.width =
         "100%";
 
+
       progressText.textContent =
         "100%";
+
 
       reviewCard.classList.remove(
         "hidden"
       );
+
 
       reviewCard.scrollIntoView({
         behavior: "smooth"
       });
 
     }
+
+
     catch (error) {
 
-      console.error(error);
+      console.error(
+        error
+      );
+
 
       processingCard.classList.add(
         "hidden"
       );
 
+
       showError(
+
         "The PDF could not be processed. " +
         "Technical message: " +
         error.message
+
       );
 
     }
+
+
     finally {
 
-      processButton.disabled = false;
+      processButton.disabled =
+        false;
 
     }
 
   }
 );
 
+
+/*
+=================================================
+SAVE PARENT CORRECTIONS
+=================================================
+*/
 
 saveButton.addEventListener(
   "click",
@@ -705,7 +1222,10 @@ saveButton.addEventListener(
         "textarea[data-page]"
       );
 
-    extractedPages = [];
+
+    extractedPages =
+      [];
+
 
     textareas.forEach(
       textarea => {
@@ -726,11 +1246,18 @@ saveButton.addEventListener(
     );
 
 
+    /*
+    Save locally in this browser.
+    */
+
     localStorage.setItem(
+
       "shrikarCurrentBook",
+
       JSON.stringify(
         extractedPages
       )
+
     );
 
 
