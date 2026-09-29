@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Shrikar Reading Comprehension
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="./css/styles.css"
+    >
+
+</head>
+
+
+<body>
+
+
+    <!-- ==========================================
+         APPLICATION HEADER
+         ========================================== -->
+
+    <header class="app-header">
+
+        <div class="header-content">
+
+            <h1>
+                📚 Shrikar Reading Comprehension
+            </h1>
+
+            <p>
+                Read • Understand • Remember
+            </p>
+
+            <div class="version">
+                Version 2.0
+            </div>
+
+        </div>
+
+    </header>
+
+
+
+    <main class="app-container">
+
+
+        <!-- ======================================
+             SCREEN 1 — BOOK UPLOAD
+             ====================================== -->
+
+        <section
+            id="uploadScreen"
+            class="screen"
+        >
+
+            <div class="card upload-card">
+
+                <div class="large-icon">
+                    📖
+                </div>
+
+                <h2>
+                    Choose Today's Story
+                </h2>
+
+                <p class="instruction">
+                    Load the Book Data file created by
+                    Shrikar Book OCR Extractor.
+                </p>
+
+
+                <div class="file-area">
+
+                    <label
+                        for="bookFileInput"
+                        class="file-label"
+                    >
+
+                        📂 Choose Book Data
+
+                    </label>
+
+
+                    <input
+                        type="file"
+                        id="bookFileInput"
+                        accept=".json,application/json"
+                    >
+
+
+                    <div
+                        id="selectedFileName"
+                        class="selected-file"
+                    >
+                        No book selected
+                    </div>
+
+                </div>
+
+
+                <button
+                    id="loadBookButton"
+                    class="primary-button"
+                    disabled
+                >
+                    Load My Story
+                </button>
+
+
+                <div
+                    id="uploadError"
+                    class="error-message hidden"
+                ></div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ======================================
+             SCREEN 2 — BOOK READY
+             ====================================== -->
+
+        <section
+            id="bookReadyScreen"
+            class="screen hidden"
+        >
+
+            <div class="card ready-card">
+
+                <div class="large-icon">
+                    🎉
+                </div>
+
+                <h2>
+                    Your Story Is Ready!
+                </h2>
+
+
+                <div class="book-information">
+
+                    <div class="info-row">
+
+                        <span class="info-label">
+                            Book:
+                        </span>
+
+                        <span id="bookName">
+                        </span>
+
+                    </div>
+
+
+                    <div class="info-row">
+
+                        <span class="info-label">
+                            Story sentences:
+                        </span>
+
+                        <span id="sentenceCount">
+                        </span>
+
+                    </div>
+
+
+                    <div class="info-row">
+
+                        <span class="info-label">
+                            Source pages:
+                        </span>
+
+                        <span id="sourcePageCount">
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div class="ready-message">
+
+                    <strong>
+                        Shrikar, get ready!
+                    </strong>
+
+                    <p>
+                        You will read three sentences at a time.
+                        Some sentences will appear again to help
+                        you connect the story.
+                    </p>
+
+                </div>
+
+
+                <button
+                    id="startReadingButton"
+                    class="primary-button big-button"
+                >
+                    🚀 Start Reading
+                </button>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ======================================
+             SCREEN 3 — READING
+             ====================================== -->
+
+        <section
+            id="readingScreen"
+            class="screen hidden"
+        >
+
+
+            <div class="reading-top-bar">
+
+                <div
+                    id="readingBookName"
+                    class="reading-book-name"
+                >
+                </div>
+
+
+                <div class="progress-information">
+
+                    <span id="progressText">
+                    </span>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="progress-track">
+
+                <div
+                    id="progressBar"
+                    class="progress-bar"
+                ></div>
+
+            </div>
+
+
+
+            <div class="reading-card">
+
+
+                <div class="reading-label">
+                    📖 READ CAREFULLY
+                </div>
+
+
+                <div
+                    id="sentenceContainer"
+                    class="sentence-container"
+                >
+                </div>
+
+
+            </div>
+
+
+
+            <div class="reading-controls">
+
+                <button
+                    id="previousButton"
+                    class="secondary-button"
+                >
+                    ← Back
+                </button>
+
+
+                <button
+                    id="nextButton"
+                    class="primary-button"
+                >
+                    Next →
+                </button>
+
+            </div>
+
+
+            <div class="reading-tip">
+
+                💡 Read all three sentences before pressing Next.
+
+            </div>
+
+
+        </section>
+
+
+
+        <!-- ======================================
+             SCREEN 4 — STORY COMPLETE
+             ====================================== -->
+
+        <section
+            id="completeScreen"
+            class="screen hidden"
+        >
+
+            <div class="card complete-card">
+
+                <div class="large-icon">
+                    🌟
+                </div>
+
+                <h2>
+                    Great Reading, Shrikar!
+                </h2>
+
+                <p>
+                    You reached the end of the story.
+                </p>
+
+                <p class="coming-next">
+                    Comprehension questions and points
+                    will be added in the next version.
+                </p>
+
+
+                <button
+                    id="readAgainButton"
+                    class="secondary-button"
+                >
+                    ↻ Read Again
+                </button>
+
+
+                <button
+                    id="newBookButton"
+                    class="primary-button"
+                >
+                    📚 Choose Another Book
+                </button>
+
+            </div>
+
+        </section>
+
+
+    </main>
+
+
+    <script
+        type="module"
+        src="./js/app.js"
+    ></script>
+
+
+</body>
+
+</html>
