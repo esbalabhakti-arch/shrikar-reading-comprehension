@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="en">
 
 <head>
@@ -25,10 +24,9 @@
 
 <body>
 
-
-    <!-- ==========================================
-         APPLICATION HEADER
-         ========================================== -->
+    <!-- =================================================
+         HEADER
+         ================================================= -->
 
     <header class="app-header">
 
@@ -43,7 +41,7 @@
             </p>
 
             <div class="version">
-                Version 2.0
+                Version 2.2
             </div>
 
         </div>
@@ -55,9 +53,9 @@
     <main class="app-container">
 
 
-        <!-- ======================================
+        <!-- =================================================
              SCREEN 1 — BOOK UPLOAD
-             ====================================== -->
+             ================================================= -->
 
         <section
             id="uploadScreen"
@@ -86,9 +84,7 @@
                         for="bookFileInput"
                         class="file-label"
                     >
-
                         📂 Choose Book Data
-
                     </label>
 
 
@@ -129,9 +125,9 @@
 
 
 
-        <!-- ======================================
+        <!-- =================================================
              SCREEN 2 — BOOK READY
-             ====================================== -->
+             ================================================= -->
 
         <section
             id="bookReadyScreen"
@@ -157,8 +153,7 @@
                             Book:
                         </span>
 
-                        <span id="bookName">
-                        </span>
+                        <span id="bookName"></span>
 
                     </div>
 
@@ -169,8 +164,7 @@
                             Story sentences:
                         </span>
 
-                        <span id="sentenceCount">
-                        </span>
+                        <span id="sentenceCount"></span>
 
                     </div>
 
@@ -181,8 +175,7 @@
                             Source pages:
                         </span>
 
-                        <span id="sourcePageCount">
-                        </span>
+                        <span id="sourcePageCount"></span>
 
                     </div>
 
@@ -196,9 +189,14 @@
                     </strong>
 
                     <p>
-                        You will read three sentences at a time.
-                        Some sentences will appear again to help
-                        you connect the story.
+                        Read carefully.
+                        Every few sentences we will stop
+                        and see what you remember.
+                    </p>
+
+                    <p>
+                        You can earn ⭐ points by answering
+                        questions about the story.
                     </p>
 
                 </div>
@@ -217,29 +215,37 @@
 
 
 
-        <!-- ======================================
+        <!-- =================================================
              SCREEN 3 — READING
-             ====================================== -->
+             ================================================= -->
 
         <section
             id="readingScreen"
             class="screen hidden"
         >
 
-
             <div class="reading-top-bar">
 
                 <div
                     id="readingBookName"
                     class="reading-book-name"
-                >
+                ></div>
+
+
+                <div class="top-score">
+
+                    ⭐
+                    <span id="readingScore">
+                        0
+                    </span>
+                    points
+
                 </div>
 
 
                 <div class="progress-information">
 
-                    <span id="progressText">
-                    </span>
+                    <span id="progressText"></span>
 
                 </div>
 
@@ -269,32 +275,32 @@
                 <div
                     id="sentenceContainer"
                     class="sentence-container"
-                >
-                </div>
+                ></div>
 
-                <!-- ======================================
-                 CONTEXT BRIDGE
-                 ====================================== -->
-            
-            <div
-                id="contextBridge"
-                class="context-bridge"
-            >
-            
-                <div class="context-title">
-                    🔗 Connect the Story
-                </div>
-            
+
+
+                <!-- CONTEXT BRIDGE -->
+
                 <div
-                    id="contextText"
-                    class="context-text"
+                    id="contextBridge"
+                    class="context-bridge"
                 >
-                    Think about what is happening in these
-                    three sentences and how it connects to
-                    what happened just before.
+
+                    <div class="context-title">
+                        🔗 Connect the Story
+                    </div>
+
+                    <div
+                        id="contextText"
+                        class="context-text"
+                    >
+                        Think about what is happening in these
+                        sentences and how it connects to what
+                        happened just before.
+                    </div>
+
                 </div>
 
-</div>
 
             </div>
 
@@ -321,19 +327,493 @@
 
 
             <div class="reading-tip">
-
                 💡 Read all three sentences before pressing Next.
-
             </div>
-
 
         </section>
 
 
 
-        <!-- ======================================
-             SCREEN 4 — STORY COMPLETE
-             ====================================== -->
+        <!-- =================================================
+             SCREEN 4 — CHECKPOINT INTRO
+             ================================================= -->
+
+        <section
+            id="checkpointIntroScreen"
+            class="screen hidden"
+        >
+
+            <div class="card checkpoint-intro-card">
+
+                <div class="large-icon">
+                    🧠
+                </div>
+
+                <div class="checkpoint-label">
+                    COMPREHENSION CHECK
+                </div>
+
+                <h2>
+                    Let's See What You Remember!
+                </h2>
+
+
+                <p
+                    id="checkpointRangeText"
+                    class="checkpoint-range"
+                >
+                    You just read sentences 1–6.
+                </p>
+
+
+                <div class="checkpoint-instructions">
+
+                    <p>
+                        Shrikar, answer the questions
+                        <strong>out loud</strong>.
+                    </p>
+
+                    <p>
+                        Try to answer by yourself first.
+                        If you need help, that's okay —
+                        you can use a hint.
+                    </p>
+
+                </div>
+
+
+                <div class="points-guide">
+
+                    <div>
+                        ⭐⭐⭐
+                        <strong>3 points</strong>
+                        — by yourself
+                    </div>
+
+                    <div>
+                        ⭐⭐
+                        <strong>2 points</strong>
+                        — after a hint
+                    </div>
+
+                    <div>
+                        ⭐
+                        <strong>1 point</strong>
+                        — after choices
+                    </div>
+
+                </div>
+
+
+                <button
+                    id="beginQuestionsButton"
+                    class="primary-button big-button"
+                >
+                    🧠 Start Questions
+                </button>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =================================================
+             SCREEN 5 — QUESTION
+             ================================================= -->
+
+        <section
+            id="questionScreen"
+            class="screen hidden"
+        >
+
+            <div class="question-top-bar">
+
+                <div>
+                    🧠 Comprehension Check
+                </div>
+
+                <div class="question-score">
+                    ⭐
+                    <span id="questionTotalScore">
+                        0
+                    </span>
+                    points
+                </div>
+
+            </div>
+
+
+            <div class="question-progress-track">
+
+                <div
+                    id="questionProgressBar"
+                    class="question-progress-bar"
+                ></div>
+
+            </div>
+
+
+            <div class="question-card">
+
+
+                <div class="question-header">
+
+                    <span
+                        id="questionNumber"
+                        class="question-number"
+                    >
+                        Question 1 of 3
+                    </span>
+
+
+                    <span
+                        id="questionType"
+                        class="question-type"
+                    >
+                        Direct Recall
+                    </span>
+
+                </div>
+
+
+
+                <div
+                    id="questionText"
+                    class="question-text"
+                >
+                    Question goes here.
+                </div>
+
+
+
+                <div class="speak-answer-box">
+
+                    <div class="speak-icon">
+                        🗣️
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            Shrikar: say your answer out loud.
+                        </strong>
+
+                        <p>
+                            Parent: listen to his answer before
+                            opening any help.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- HINT -->
+
+                <div class="support-buttons">
+
+                    <button
+                        id="showHintButton"
+                        class="hint-button"
+                    >
+                        💡 Give Me a Hint
+                    </button>
+
+
+                    <button
+                        id="showChoicesButton"
+                        class="choices-button"
+                    >
+                        🔵 Show Choices
+                    </button>
+
+                </div>
+
+
+
+                <div
+                    id="hintBox"
+                    class="support-box hint-box hidden"
+                >
+
+                    <div class="support-title">
+                        💡 Hint
+                    </div>
+
+                    <div id="hintText"></div>
+
+                </div>
+
+
+
+                <!-- CHOICES -->
+
+                <div
+                    id="choicesBox"
+                    class="support-box choices-box hidden"
+                >
+
+                    <div class="support-title">
+                        Think about these choices:
+                    </div>
+
+                    <div
+                        id="choicesContainer"
+                        class="choices-container"
+                    ></div>
+
+                </div>
+
+
+
+                <!-- EXPECTED ANSWER / PARENT GUIDE -->
+
+                <div
+                    id="answerGuideBox"
+                    class="answer-guide hidden"
+                >
+
+                    <div class="support-title">
+                        👨‍👩‍👦 Parent Guide
+                    </div>
+
+                    <div
+                        id="expectedAnswerText"
+                        class="expected-answer"
+                    ></div>
+
+                </div>
+
+
+
+                <button
+                    id="showAnswerGuideButton"
+                    class="show-answer-button"
+                >
+                    👀 Show Parent Answer Guide
+                </button>
+
+
+
+                <!-- PARENT SCORING -->
+
+                <div
+                    id="parentScoringPanel"
+                    class="parent-scoring-panel"
+                >
+
+                    <div class="parent-score-title">
+                        Parent: How did Shrikar do?
+                    </div>
+
+
+                    <div class="scoring-grid">
+
+
+                        <button
+                            id="independentButton"
+                            class="score-button independent-score"
+                        >
+
+                            <span class="score-stars">
+                                ⭐⭐⭐
+                            </span>
+
+                            <strong>
+                                Got It
+                            </strong>
+
+                            <small>
+                                independently
+                            </small>
+
+                        </button>
+
+
+
+                        <button
+                            id="hintScoreButton"
+                            class="score-button hint-score"
+                        >
+
+                            <span class="score-stars">
+                                ⭐⭐
+                            </span>
+
+                            <strong>
+                                Got It
+                            </strong>
+
+                            <small>
+                                after hint
+                            </small>
+
+                        </button>
+
+
+
+                        <button
+                            id="choicesScoreButton"
+                            class="score-button choices-score"
+                        >
+
+                            <span class="score-stars">
+                                ⭐
+                            </span>
+
+                            <strong>
+                                Got It
+                            </strong>
+
+                            <small>
+                                after choices
+                            </small>
+
+                        </button>
+
+
+
+                        <button
+                            id="notYetButton"
+                            class="score-button not-yet-score"
+                        >
+
+                            <span class="score-stars">
+                                0
+                            </span>
+
+                            <strong>
+                                Not Yet
+                            </strong>
+
+                            <small>
+                                answer needed
+                            </small>
+
+                        </button>
+
+
+                    </div>
+
+
+                    <button
+                        id="parentUnsureButton"
+                        class="parent-unsure-button"
+                    >
+                        🤔 I'm not sure if that answer counts
+                    </button>
+
+                </div>
+
+
+
+                <!-- SCORE FEEDBACK -->
+
+                <div
+                    id="scoreFeedback"
+                    class="score-feedback hidden"
+                ></div>
+
+
+                <button
+                    id="nextQuestionButton"
+                    class="primary-button next-question-button hidden"
+                >
+                    Next Question →
+                </button>
+
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =================================================
+             SCREEN 6 — CHECKPOINT COMPLETE
+             ================================================= -->
+
+        <section
+            id="checkpointCompleteScreen"
+            class="screen hidden"
+        >
+
+            <div class="card checkpoint-complete-card">
+
+                <div class="large-icon">
+                    ⭐
+                </div>
+
+                <h2>
+                    Checkpoint Complete!
+                </h2>
+
+
+                <div class="checkpoint-score-display">
+
+                    <div
+                        id="checkpointPointsEarned"
+                        class="big-score"
+                    >
+                        0
+                    </div>
+
+                    <div class="score-out-of">
+                        out of 9 points
+                    </div>
+
+                </div>
+
+
+                <div
+                    id="checkpointMessage"
+                    class="checkpoint-message"
+                >
+                    Nice work!
+                </div>
+
+
+
+                <div
+                    id="checkpointBreakdown"
+                    class="checkpoint-breakdown"
+                ></div>
+
+
+
+                <div class="total-score-box">
+
+                    Total Story Score:
+
+                    <strong>
+                        ⭐
+                        <span id="totalStoryScore">
+                            0
+                        </span>
+                    </strong>
+
+                </div>
+
+
+
+                <button
+                    id="continueStoryButton"
+                    class="primary-button big-button"
+                >
+                    📖 Continue Story
+                </button>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =================================================
+             SCREEN 7 — STORY COMPLETE
+             ================================================= -->
 
         <section
             id="completeScreen"
@@ -343,7 +823,7 @@
             <div class="card complete-card">
 
                 <div class="large-icon">
-                    🌟
+                    🏆
                 </div>
 
                 <h2>
@@ -351,13 +831,33 @@
                 </h2>
 
                 <p>
-                    You reached the end of the story.
+                    You reached the end of today's story.
                 </p>
 
-                <p class="coming-next">
-                    Comprehension questions and points
-                    will be added in the next version.
-                </p>
+
+                <div class="final-score-box">
+
+                    <div class="final-score-label">
+                        Your Total Score
+                    </div>
+
+                    <div class="final-score-value">
+
+                        ⭐
+
+                        <span id="finalScore">
+                            0
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div
+                    id="finalSessionSummary"
+                    class="final-session-summary"
+                ></div>
 
 
                 <button
